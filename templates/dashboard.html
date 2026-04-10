@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus Water Dashboard</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --danger: #dc2626;
+      --warning: #f59e0b;
+      --success: #16a34a;
+      --border: #e5e7eb;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(180deg, #eef4ff 0%, var(--bg) 22%);
+      color: var(--text);
+    }
+
+    .page {
+      padding: 22px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: 0 14px 35px rgba(37, 99, 235, 0.28);
+      margin-bottom: 22px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+    }
+
+    .hero p {
+      margin: 10px 0 0;
+      color: rgba(255,255,255,0.86);
+      max-width: 850px;
+      line-height: 1.5;
+    }
+
+    .hero-stats {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+    }
+
+    .hero-chip {
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 18px;
+      padding: 14px 16px;
+    }
+
+    .hero-chip .label {
+      font-size: 0.84rem;
+      color: rgba(255,255,255,0.82);
+      margin-bottom: 6px;
+    }
+
+    .hero-chip .value {
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin: 0 0 14px;
+      color: var(--text);
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .kpi-label {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .kpi-sub {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .filter-box label {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    #map {
+      height: 560px;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .chart-wrap {
+      height: 320px;
+      position: relative;
+    }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f8fafc;
+      color: #374151;
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot-blue { background: var(--primary); }
+    .dot-red { background: var(--danger); }
+
+    .activity-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .activity-card {
+      padding: 14px;
+      border-radius: 16px;
+      background: #f8fafc;
+      border: 1px solid #edf2f7;
+    }
+
+    .activity-card h4 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: var(--text);
+    }
+
+    .activity-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 14px 12px;
+      border-bottom: 1px solid #eef2f7;
+      font-size: 0.94rem;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .badge-blue { background: #dbeafe; color: #1d4ed8; }
+    .badge-red { background: #fee2e2; color: #b91c1c; }
+    .badge-yellow { background: #fef3c7; color: #b45309; }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-gray { background: #e5e7eb; color: #374151; }
+
+    @media (max-width: 1100px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      #map {
+        height: 460px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>Campus Water Dashboard</h1>
+      <p>
+        Live premium monitoring dashboard for water assets, incidents, severity trends,
+        and field activity. Filters update the map, charts, and tables in real time.
+      </p>
+
+      <div class="hero-stats">
+        <div class="hero-chip">
+          <div class="label">System Status</div>
+          <div class="value">Online</div>
+        </div>
+        <div class="hero-chip">
+          <div class="label">Data Sync</div>
+          <div class="value">Live</div>
+        </div>
+        <div class="hero-chip">
+          <div class="label">Refresh</div>
+          <div class="value">10 sec</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="kpis">
+      <div class="card">
+        <div class="kpi-label">Total Water Assets</div>
+        <div class="kpi-value" id="assetCount">0</div>
+        <div class="kpi-sub">Registered infrastructure points</div>
+      </div>
+
+      <div class="card">
+        <div class="kpi-label">Filtered Incidents</div>
+        <div class="kpi-value" id="incidentCount">0</div>
+        <div class="kpi-sub">Visible after applying filters</div>
+      </div>
+
+      <div class="card">
+        <div class="kpi-label">Active / Under Repair</div>
+        <div class="kpi-value" id="activeIncidentCount">0</div>
+        <div class="kpi-sub">Operational attention required</div>
+      </div>
+
+      <div class="card">
+        <div class="kpi-label">High Severity</div>
+        <div class="kpi-value" id="highSeverityCount">0</div>
+        <div class="kpi-sub">Critical incident count</div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-bottom: 22px;">
+      <div class="section-title">Dashboard Filters</div>
+      <div class="filters">
+        <div class="filter-box">
+          <label for="incidentTypeFilter">Incident Type</label>
+          <select id="incidentTypeFilter">
+            <option value="all">All</option>
+          </select>
+        </div>
+
+        <div class="filter-box">
+          <label for="statusFilter">Status</label>
+          <select id="statusFilter">
+            <option value="all">All</option>
+            <option value="active">Active</option>
+            <option value="under_repair">Under Repair</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </div>
+
+        <div class="filter-box">
+          <label for="severityFilter">Severity</label>
+          <select id="severityFilter">
+            <option value="all">All</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+
+        <div class="filter-box">
+          <label for="assetTypeFilter">Asset Type</label>
+          <select id="assetTypeFilter">
+            <option value="all">All</option>
+          </select>
+        </div>
+
+        <div class="filter-box">
+          <label for="searchFilter">Search Incident Name</label>
+          <input id="searchFilter" type="text" placeholder="Type incident name..." />
+        </div>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="card">
+        <div class="section-title">Live Map</div>
+        <div id="map"></div>
+        <div class="legend">
+          <div class="legend-item"><span class="dot dot-blue"></span> Water Assets</div>
+          <div class="legend-item"><span class="dot dot-red"></span> Incidents</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Recent Activity</div>
+        <div class="activity-list" id="recentActivity">
+          <div class="activity-card">
+            <h4>Loading...</h4>
+            <p>Please wait while recent activity is prepared.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid-3">
+      <div class="card">
+        <div class="section-title">Asset Types</div>
+        <div class="chart-wrap">
+          <canvas id="assetTypeChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Incident Types</div>
+        <div class="chart-wrap">
+          <canvas id="incidentTypeChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Severity Distribution</div>
+        <div class="chart-wrap">
+          <canvas id="severityChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-bottom: 22px;">
+      <div class="section-title">Filtered Incident Records</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Severity</th>
+              <th>Latitude</th>
+              <th>Longitude</th>
+            </tr>
+          </thead>
+          <tbody id="incidentTableBody">
+            <tr>
+              <td colspan="6">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const map = L.map('map').setView([-17.825, 31.053], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const assetLayer = L.layerGroup().addTo(map);
+    const incidentLayer = L.layerGroup().addTo(map);
+
+    let allAssets = [];
+    let allIncidents = [];
+    let assetTypeChart, incidentTypeChart, severityChart;
+
+    function countBy(items, key) {
+      const counts = {};
+      items.forEach(item => {
+        const value = item[key] ?? 'unknown';
+        counts[value] = (counts[value] || 0) + 1;
+      });
+      return counts;
+    }
+
+    function destroyChart(chart) {
+      if (chart) chart.destroy();
+    }
+
+    function makeDoughnutChart(canvasId, labels, data, label) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      return new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            label,
+            data,
+            backgroundColor: [
+              '#2563eb',
+              '#dc2626',
+              '#f59e0b',
+              '#16a34a',
+              '#7c3aed',
+              '#14b8a6',
+              '#64748b'
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    function makeBarChart(canvasId, labels, data, label) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      return new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label,
+            data,
+            backgroundColor: '#2563eb',
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0 }
+            }
+          }
+        }
+      });
+    }
+
+    function statusBadgeClass(status) {
+      if (status === 'active') return 'badge-red';
+      if (status === 'under_repair') return 'badge-yellow';
+      if (status === 'resolved') return 'badge-green';
+      return 'badge-gray';
+    }
+
+    function severityBadgeClass(sev) {
+      if (sev === 'high') return 'badge-red';
+      if (sev === 'medium') return 'badge-yellow';
+      if (sev === 'low') return 'badge-green';
+      return 'badge-gray';
+    }
+
+    function populateFilterOptions() {
+      const incidentTypeFilter = document.getElementById('incidentTypeFilter');
+      const assetTypeFilter = document.getElementById('assetTypeFilter');
+
+      const incidentTypes = [...new Set(allIncidents.map(i => i.incident_type).filter(Boolean))];
+      const assetTypes = [...new Set(allAssets.map(a => a.asset_type).filter(Boolean))];
+
+      incidentTypeFilter.innerHTML = '<option value="all">All</option>';
+      assetTypeFilter.innerHTML = '<option value="all">All</option>';
+
+      incidentTypes.forEach(type => {
+        incidentTypeFilter.innerHTML += `<option value="${type}">${type}</option>`;
+      });
+
+      assetTypes.forEach(type => {
+        assetTypeFilter.innerHTML += `<option value="${type}">${type}</option>`;
+      });
+    }
+
+    function getFilteredData() {
+      const incidentType = document.getElementById('incidentTypeFilter').value;
+      const status = document.getElementById('statusFilter').value;
+      const severity = document.getElementById('severityFilter').value;
+      const assetType = document.getElementById('assetTypeFilter').value;
+      const searchTerm = document.getElementById('searchFilter').value.toLowerCase().trim();
+
+      const filteredAssets = allAssets.filter(asset => {
+        if (assetType !== 'all' && asset.asset_type !== assetType) return false;
+        return true;
+      });
+
+      const filteredIncidents = allIncidents.filter(incident => {
+        if (incidentType !== 'all' && incident.incident_type !== incidentType) return false;
+        if (status !== 'all' && incident.condition_status !== status) return false;
+        if (severity !== 'all' && (incident.severity ?? '') !== severity) return false;
+        if (searchTerm && !incident.incident_name.toLowerCase().includes(searchTerm)) return false;
+        return true;
+      });
+
+      return { filteredAssets, filteredIncidents };
+    }
+
+    function updateMap(filteredAssets, filteredIncidents) {
+      assetLayer.clearLayers();
+      incidentLayer.clearLayers();
+
+      const bounds = [];
+
+      filteredAssets.forEach(asset => {
+        const marker = L.circleMarker([asset.latitude, asset.longitude], {
+          radius: 8,
+          color: '#2563eb',
+          fillColor: '#2563eb',
+          fillOpacity: 0.95
+        }).bindPopup(`
+          <b>Asset:</b> ${asset.asset_name}<br>
+          <b>Type:</b> ${asset.asset_type}<br>
+          <b>Status:</b> ${asset.condition_status}<br>
+          <b>Notes:</b> ${asset.notes ?? ''}
+        `);
+        marker.addTo(assetLayer);
+        bounds.push([asset.latitude, asset.longitude]);
+      });
+
+      filteredIncidents.forEach(incident => {
+        const marker = L.circleMarker([incident.latitude, incident.longitude], {
+          radius: 8,
+          color: '#dc2626',
+          fillColor: '#dc2626',
+          fillOpacity: 0.95
+        }).bindPopup(`
+          <b>Incident:</b> ${incident.incident_name}<br>
+          <b>Type:</b> ${incident.incident_type}<br>
+          <b>Status:</b> ${incident.condition_status}<br>
+          <b>Severity:</b> ${incident.severity ?? ''}<br>
+          <b>Notes:</b> ${incident.notes ?? ''}
+        `);
+        marker.addTo(incidentLayer);
+        bounds.push([incident.latitude, incident.longitude]);
+      });
+
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [30, 30] });
+      }
+    }
+
+    function updateKpis(filteredIncidents) {
+      document.getElementById('assetCount').textContent = allAssets.length;
+      document.getElementById('incidentCount').textContent = filteredIncidents.length;
+      document.getElementById('activeIncidentCount').textContent =
+        filteredIncidents.filter(i => i.condition_status === 'active' || i.condition_status === 'under_repair').length;
+      document.getElementById('highSeverityCount').textContent =
+        filteredIncidents.filter(i => i.severity === 'high').length;
+    }
+
+    function updateCharts(filteredAssets, filteredIncidents) {
+      const assetTypeCounts = countBy(filteredAssets, 'asset_type');
+      const incidentTypeCounts = countBy(filteredIncidents, 'incident_type');
+      const severityCounts = countBy(filteredIncidents, 'severity');
+
+      destroyChart(assetTypeChart);
+      destroyChart(incidentTypeChart);
+      destroyChart(severityChart);
+
+      assetTypeChart = makeDoughnutChart(
+        'assetTypeChart',
+        Object.keys(assetTypeCounts),
+        Object.values(assetTypeCounts),
+        'Assets'
+      );
+
+      incidentTypeChart = makeBarChart(
+        'incidentTypeChart',
+        Object.keys(incidentTypeCounts),
+        Object.values(incidentTypeCounts),
+        'Incidents'
+      );
+
+      severityChart = makeDoughnutChart(
+        'severityChart',
+        Object.keys(severityCounts),
+        Object.values(severityCounts),
+        'Severity'
+      );
+    }
+
+    function updateTable(filteredIncidents) {
+      const tableBody = document.getElementById('incidentTableBody');
+      tableBody.innerHTML = '';
+
+      if (filteredIncidents.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6">No incidents match the selected filters.</td></tr>`;
+        return;
+      }
+
+      [...filteredIncidents].reverse().slice(0, 12).forEach(incident => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${incident.incident_name}</td>
+          <td><span class="badge badge-blue">${incident.incident_type}</span></td>
+          <td><span class="badge ${statusBadgeClass(incident.condition_status)}">${incident.condition_status}</span></td>
+          <td><span class="badge ${severityBadgeClass(incident.severity)}">${incident.severity ?? 'n/a'}</span></td>
+          <td>${incident.latitude}</td>
+          <td>${incident.longitude}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    function updateRecentActivity(filteredIncidents) {
+      const container = document.getElementById('recentActivity');
+      container.innerHTML = '';
+
+      const recent = [...filteredIncidents].reverse().slice(0, 5);
+
+      if (recent.length === 0) {
+        container.innerHTML = `
+          <div class="activity-card">
+            <h4>No recent activity</h4>
+            <p>No incidents currently match the selected filters.</p>
+          </div>
+        `;
+        return;
+      }
+
+      recent.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'activity-card';
+        card.innerHTML = `
+          <h4>${item.incident_name}</h4>
+          <p>
+            Type: <strong>${item.incident_type}</strong> |
+            Status: <strong>${item.condition_status}</strong> |
+            Severity: <strong>${item.severity ?? 'n/a'}</strong><br>
+            Coordinates: ${item.latitude}, ${item.longitude}
+          </p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function applyFilters() {
+      const { filteredAssets, filteredIncidents } = getFilteredData();
+      updateKpis(filteredIncidents);
+      updateMap(filteredAssets, filteredIncidents);
+      updateCharts(filteredAssets, filteredIncidents);
+      updateTable(filteredIncidents);
+      updateRecentActivity(filteredIncidents);
+    }
+
+    async function loadData() {
+      try {
+        const [assetRes, incidentRes] = await Promise.all([
+          fetch('/assets'),
+          fetch('/incidents')
+        ]);
+
+        allAssets = await assetRes.json();
+        allIncidents = await incidentRes.json();
+
+        populateFilterOptions();
+        applyFilters();
+      } catch (error) {
+        console.error('Dashboard load error:', error);
+      }
+    }
+
+    document.getElementById('incidentTypeFilter').addEventListener('change', applyFilters);
+    document.getElementById('statusFilter').addEventListener('change', applyFilters);
+    document.getElementById('severityFilter').addEventListener('change', applyFilters);
+    document.getElementById('assetTypeFilter').addEventListener('change', applyFilters);
+    document.getElementById('searchFilter').addEventListener('input', applyFilters);
+
+    loadData();
+    setInterval(loadData, 10000);
+  </script>
+</body>
+</html>
