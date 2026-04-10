@@ -3,10 +3,26 @@ from sqlalchemy import text
 from . import models, schemas
 
 
+# ================= USERS =================
 def get_users(db: Session):
     return db.query(models.User).all()
 
 
+def create_user(db: Session, user: schemas.UserCreate):
+    db_user = models.User(
+        full_name=user.full_name,
+        email=user.email,
+        password=user.password,
+        role=user.role if user.role else "worker",
+        is_active=True
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+# ================= WATER ASSETS =================
 def create_water_asset(db: Session, asset: schemas.WaterAssetCreate):
     query = text("""
         INSERT INTO water_assets
@@ -38,6 +54,7 @@ def get_water_assets(db: Session):
     return db.query(models.WaterAsset).all()
 
 
+# ================= INCIDENTS =================
 def create_incident(db: Session, incident: schemas.IncidentCreate):
     query = text("""
         INSERT INTO incident_reports

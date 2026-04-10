@@ -2,6 +2,14 @@ from pydantic import BaseModel
 from typing import Optional
 
 
+# ================= USERS =================
+class UserCreate(BaseModel):
+    full_name: str
+    email: str
+    password: str
+    role: Optional[str] = "worker"
+
+
 class UserOut(BaseModel):
     id: int
     full_name: str
@@ -13,6 +21,7 @@ class UserOut(BaseModel):
         from_attributes = True
 
 
+# ================= WATER ASSETS =================
 class WaterAssetCreate(BaseModel):
     asset_name: str
     asset_type: str
@@ -40,6 +49,7 @@ class WaterAssetOut(BaseModel):
         from_attributes = True
 
 
+# ================= INCIDENTS =================
 class IncidentCreate(BaseModel):
     incident_name: str
     incident_type: str
