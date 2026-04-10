@@ -1,5 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, TIMESTAMP, ForeignKey, Float
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey
 from .database import Base
 
 
@@ -7,45 +6,40 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    full_name = Column(String(150), nullable=False)
-    email = Column(String(150), unique=True, nullable=False)
-    password_hash = Column(Text, nullable=False)
-    role = Column(String(20), nullable=False)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(TIMESTAMP, server_default=func.now())
+    full_name = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password = Column(String, nullable=False)
+    role = Column(String, default="worker", nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
 
 
 class WaterAsset(Base):
     __tablename__ = "water_assets"
 
     id = Column(Integer, primary_key=True, index=True)
-    asset_name = Column(String(150), nullable=False)
-    asset_type = Column(String(50), nullable=False)
+    asset_name = Column(String, nullable=False)
+    asset_type = Column(String, nullable=False)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    condition_status = Column(String(30), nullable=False)
-    photo_path = Column(Text, nullable=True)
-    notes = Column(Text, nullable=True)
+    condition_status = Column(String, nullable=False)
+    photo_path = Column(String, nullable=True)
+    notes = Column(String, nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    is_verified = Column(Boolean, default=False)
-    created_at = Column(TIMESTAMP, server_default=func.now())
-    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+    is_verified = Column(Boolean, default=False, nullable=False)
 
 
 class IncidentReport(Base):
     __tablename__ = "incident_reports"
 
     id = Column(Integer, primary_key=True, index=True)
-    incident_name = Column(String(150), nullable=False)
-    incident_type = Column(String(50), nullable=False)
+    incident_name = Column(String, nullable=False)
+    incident_type = Column(String, nullable=False)
     related_asset_id = Column(Integer, ForeignKey("water_assets.id"), nullable=True)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    condition_status = Column(String(30), nullable=False)
-    severity = Column(String(20), nullable=True)
-    photo_path = Column(Text, nullable=True)
-    notes = Column(Text, nullable=True)
+    condition_status = Column(String, nullable=False)
+    severity = Column(String, nullable=True)
+    photo_path = Column(String, nullable=True)
+    notes = Column(String, nullable=True)
     reported_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    is_verified = Column(Boolean, default=False)
-    created_at = Column(TIMESTAMP, server_default=func.now())
-    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+    is_verified = Column(Boolean, default=False, nullable=False)
