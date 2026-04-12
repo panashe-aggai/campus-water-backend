@@ -2,8 +2,9 @@ from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+
 from .database import get_db, engine, Base
-from . import crud, schemas, models
+from . import crud, schemas
 
 app = FastAPI(title="Campus Water System API")
 
@@ -16,7 +17,6 @@ app.add_middleware(
 )
 
 # Create database tables
-
 Base.metadata.create_all(bind=engine)
 
 templates = Jinja2Templates(directory="templates")

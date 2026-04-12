@@ -1,7 +1,9 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey
+from sqlalchemy.orm import relationship
 from .database import Base
 
 
+# ================= USERS =================
 class User(Base):
     __tablename__ = "users"
 
@@ -12,7 +14,12 @@ class User(Base):
     role = Column(String, default="worker", nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
 
+    # 🔥 Relationships (optional but powerful)
+    assets = relationship("WaterAsset", back_populates="creator")
+    incidents = relationship("IncidentReport", back_populates="reporter")
 
+
+# ================= WATER ASSETS =================
 class WaterAsset(Base):
     __tablename__ = "water_assets"
 
@@ -27,7 +34,11 @@ class WaterAsset(Base):
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
 
+    # 🔥 Relationship
+    creator = relationship("User", back_populates="assets")
 
+
+# ================= INCIDENTS =================
 class IncidentReport(Base):
     __tablename__ = "incident_reports"
 
@@ -43,3 +54,6 @@ class IncidentReport(Base):
     notes = Column(String, nullable=True)
     reported_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
+
+    # 🔥 Relationships
+    reporter = relationship("User", back_populates="incidents")

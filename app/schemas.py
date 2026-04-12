@@ -14,6 +14,7 @@ class UserOut(BaseModel):
     id: int
     full_name: str
     email: str
+    password: str   # 🔥 REQUIRED for your current Flutter login
     role: str
     is_active: bool
 

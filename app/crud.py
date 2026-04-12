@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-
 from . import models, schemas
 
 
@@ -9,6 +8,14 @@ def get_users(db: Session):
 
 
 def create_user(db: Session, user: schemas.UserCreate):
+    # 🔥 Prevent duplicate emails
+    existing_user = db.query(models.User).filter(
+        models.User.email == user.email
+    ).first()
+
+    if existing_user:
+        raise Exception("User with this email already exists")
+
     db_user = models.User(
         full_name=user.full_name,
         email=user.email,
