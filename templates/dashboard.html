@@ -201,8 +201,10 @@
       display: inline-block;
     }
 
-    .dot-blue { background: var(--primary); }
-    .dot-red { background: var(--danger); }
+    .dot-blue { background: #2563eb; }
+    .dot-red { background: #dc2626; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #16a34a; }
 
     .activity-list {
       display: grid;
@@ -377,7 +379,9 @@
         <div id="map"></div>
         <div class="legend">
           <div class="legend-item"><span class="dot dot-blue"></span> Water Assets</div>
-          <div class="legend-item"><span class="dot dot-red"></span> Incidents</div>
+          <div class="legend-item"><span class="dot dot-red"></span> High Severity Incident</div>
+          <div class="legend-item"><span class="dot dot-yellow"></span> Medium Severity Incident</div>
+          <div class="legend-item"><span class="dot dot-green"></span> Low Severity Incident</div>
         </div>
       </div>
 
@@ -442,12 +446,33 @@
   <script>
     const map = L.map('map').setView([-17.825, 31.053], 14);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    });
+
+    const satelliteLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        attribution: 'Tiles &copy; Esri'
+      }
+    );
+
+    streetLayer.addTo(map);
+
+    const baseMaps = {
+      "Street Map": streetLayer,
+      "Satellite": satelliteLayer
+    };
 
     const assetLayer = L.layerGroup().addTo(map);
     const incidentLayer = L.layerGroup().addTo(map);
+
+    const overlayMaps = {
+      "Water Assets": assetLayer,
+      "Incidents": incidentLayer
+    };
+
+    L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
 
     let allAssets = [];
     let allIncidents = [];
@@ -540,6 +565,19 @@
       return 'badge-gray';
     }
 
+    function getIncidentMarkerStyle(severity) {
+      if (severity === 'high') {
+        return { color: '#dc2626', fillColor: '#dc2626', radius: 9 };
+      }
+      if (severity === 'medium') {
+        return { color: '#f59e0b', fillColor: '#f59e0b', radius: 9 };
+      }
+      if (severity === 'low') {
+        return { color: '#16a34a', fillColor: '#16a34a', radius: 9 };
+      }
+      return { color: '#6b7280', fillColor: '#6b7280', radius: 8 };
+    }
+
     function populateFilterOptions() {
       const incidentTypeFilter = document.getElementById('incidentTypeFilter');
       const assetTypeFilter = document.getElementById('assetTypeFilter');
@@ -593,7 +631,8 @@
           radius: 8,
           color: '#2563eb',
           fillColor: '#2563eb',
-          fillOpacity: 0.95
+          fillOpacity: 0.95,
+          weight: 2
         }).bindPopup(`
           <b>Asset:</b> ${asset.asset_name}<br>
           <b>Type:</b> ${asset.asset_type}<br>
@@ -605,11 +644,13 @@
       });
 
       filteredIncidents.forEach(incident => {
+        const style = getIncidentMarkerStyle(incident.severity);
         const marker = L.circleMarker([incident.latitude, incident.longitude], {
-          radius: 8,
-          color: '#dc2626',
-          fillColor: '#dc2626',
-          fillOpacity: 0.95
+          radius: style.radius,
+          color: style.color,
+          fillColor: style.fillColor,
+          fillOpacity: 0.95,
+          weight: 2
         }).bindPopup(`
           <b>Incident:</b> ${incident.incident_name}<br>
           <b>Type:</b> ${incident.incident_type}<br>
