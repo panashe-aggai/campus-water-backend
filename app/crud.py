@@ -8,7 +8,6 @@ def get_users(db: Session):
 
 
 def create_user(db: Session, user: schemas.UserCreate):
-    # 🔥 Prevent duplicate emails
     existing_user = db.query(models.User).filter(
         models.User.email == user.email
     ).first()
@@ -52,6 +51,19 @@ def get_water_assets(db: Session):
     return db.query(models.WaterAsset).all()
 
 
+def delete_water_asset(db: Session, asset_id: int):
+    asset = db.query(models.WaterAsset).filter(
+        models.WaterAsset.id == asset_id
+    ).first()
+
+    if not asset:
+        return None
+
+    db.delete(asset)
+    db.commit()
+    return asset
+
+
 # ================= INCIDENTS =================
 def create_incident(db: Session, incident: schemas.IncidentCreate):
     db_incident = models.IncidentReport(
@@ -75,3 +87,16 @@ def create_incident(db: Session, incident: schemas.IncidentCreate):
 
 def get_incidents(db: Session):
     return db.query(models.IncidentReport).all()
+
+
+def delete_incident(db: Session, incident_id: int):
+    incident = db.query(models.IncidentReport).filter(
+        models.IncidentReport.id == incident_id
+    ).first()
+
+    if not incident:
+        return None
+
+    db.delete(incident)
+    db.commit()
+    return incident

@@ -60,6 +60,14 @@ def get_assets(db: Session = Depends(get_db)):
     return crud.get_water_assets(db)
 
 
+@app.delete("/assets/{asset_id}")
+def delete_asset(asset_id: int, db: Session = Depends(get_db)):
+    asset = crud.delete_water_asset(db, asset_id)
+    if not asset:
+        return {"error": "Asset not found"}
+    return {"message": "Asset deleted successfully"}
+
+
 # ================= INCIDENTS =================
 @app.post("/incidents", response_model=schemas.IncidentOut)
 def create_incident(incident: schemas.IncidentCreate, db: Session = Depends(get_db)):
@@ -69,3 +77,11 @@ def create_incident(incident: schemas.IncidentCreate, db: Session = Depends(get_
 @app.get("/incidents", response_model=list[schemas.IncidentOut])
 def get_incidents(db: Session = Depends(get_db)):
     return crud.get_incidents(db)
+
+
+@app.delete("/incidents/{incident_id}")
+def delete_incident(incident_id: int, db: Session = Depends(get_db)):
+    incident = crud.delete_incident(db, incident_id)
+    if not incident:
+        return {"error": "Incident not found"}
+    return {"message": "Incident deleted successfully"}
